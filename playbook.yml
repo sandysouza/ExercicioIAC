@@ -1,0 +1,52 @@
+- hosts: remoto
+  gather_facts: True
+
+  tasks:
+    - name: Instalando mongodb
+      apt:
+        name: mongodb
+        state: present
+        update_cache: yes
+      notify:
+        - start mongodb
+     
+    - name: Instalando Python
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+        - python3-pip
+    
+    - name: Compiando artefatos para o servidor
+      copy:
+        src: "{{ item }}"
+        dest: "/root/{{ item }}"
+        owner: root
+        group: root
+        force: no
+      with_items:
+        - main.py
+        - requeriments.txt
+        - slacko-api.sh
+        
+    # - name: teste pip
+      # pip:
+        # requeriments: requeriments.txt
+        
+    - name: Criar diretorio
+      file:
+        path: /opt/slacko-api/
+        state: directory
+        
+    - name: Executar requeriments
+      command: python3 -m pip install -r /vagrant/requeriments.txt
+      
+    - name: Executar script
+      command: sh /vagrant/slacko-api.sh
+  
+  handlers:
+    - name: start mongodb
+      service:
+        name: mongodb
+        state: started
